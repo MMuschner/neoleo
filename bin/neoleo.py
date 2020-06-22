@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-#from __future__ import print_funtion
+# from __future__ import print_funtion
 import argparse
 
 import logging
@@ -30,41 +30,36 @@ LANGUAGES = OrderedDict(
     ch="chinesisch",
     ru="russisch",
     pt="portugiesisch",
-    pl="polnisch"
-    )
+    pl="polnisch",
+)
 
 #: The dictionary, used by :class:`logging.config.dictConfig`
 #: use it to setup your logging formatters, handlers, and loggers
 #: For details, see
 # https://docs.python.org/3.4/library/logging.config.html#configuration-dictionary-schema
 DEFAULT_LOGGING_DICT = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'standard': {'format': '[%(levelname)s] %(name)s: %(message)s'},
-    },
-    'handlers': {
-        'default': {
-            'level': 'NOTSET',
-            'formatter': 'standard',
-            'class': 'logging.StreamHandler',
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {"standard": {"format": "[%(levelname)s] %(name)s: %(message)s"},},
+    "handlers": {
+        "default": {
+            "level": "NOTSET",
+            "formatter": "standard",
+            "class": "logging.StreamHandler",
         },
     },
-    'loggers': {
-        __name__: {
-            'handlers': ['default'],
-            'level': 'INFO',
-            'propagate': True
-        }
-    }
+    "loggers": {
+        __name__: {"handlers": ["default"], "level": "INFO", "propagate": True}
+    },
 }
 
 #: Map verbosity level (int) to log level
-LOGLEVELS = {None: logging.WARNING,  # 0
-             0: logging.WARNING,
-             1: logging.INFO,
-             2: logging.DEBUG,
-             }
+LOGLEVELS = {
+    None: logging.WARNING,  # 0
+    0: logging.WARNING,
+    1: logging.INFO,
+    2: logging.DEBUG,
+}
 
 #: Instantiate our logger
 log = logging.getLogger(__name__)
@@ -72,15 +67,19 @@ log = logging.getLogger(__name__)
 try:
     import requests
 except ImportError:
-    log.fatal("ERROR: No requests module found. Install it with:\n"
-              "$ sudo zypper in python3-requests")
+    log.fatal(
+        "ERROR: No requests module found. Install it with:\n"
+        "$ sudo zypper in python3-requests"
+    )
     sys.exit(200)
 
 try:
     from lxml import html as htmlparser
 except ImportError:
-    log.fatal("ERROR: no lxml module found. Install it with:\n"
-              "$ sudo zypper in python3-lxml")
+    log.fatal(
+        "ERROR: no lxml module found. Install it with:\n"
+        "$ sudo zypper in python3-lxml"
+    )
     sys.exit(10)
 
 
@@ -148,7 +147,7 @@ def default_lang():
         # see https://www.gnu.org/software/libc/manual/
         # html_node/Standard-Locales.html#Standard-Locales
         if lang.upper() in ("C", "POSIX", ""):
-            lang = 'en'
+            lang = "en"
         return lang
     except KeyError:
         return None
@@ -161,44 +160,47 @@ def parse(cliargs=None):
     :return: parsed CLI result
     :rtype: :class:`argparse.Namespace`
     """
-    parser = argparse.ArgumentParser(description='Query leo.org',
-                                     usage='%(prog)s [OPTIONS] QUERYSTRING')
-    parser.add_argument('-D', '--with-defs',
-                        action="store_true",
-                        default=False,
-                        help="Include any definitions in the result "
-                             "(default: %(default)s)",
-                        )
-    parser.add_argument('-E', '--with-examples',
-                        action="store_true",
-                        default=False,
-                        help="Include examples in the result "
-                             "(default: %(default)s)",
-                        )
-    parser.add_argument('-P', '--with-phrases',
-                        action="store_true",
-                        default=False,
-                        help="Include phrases in the result "
-                             "(default: %(default)s)",
-                        )
-    parser.add_argument('-v', '--verbose',
-                        action="count",
-                        help="Raise verbosity level",
-                        )
-    parser.add_argument('-l', '--language',
-                        action="store",
-                        default=default_lang(),
-                        help="Translate from/to a specific language "
-                             "by their full name or shortcut "
-                             "(default: %(default)s). "
-                             "Available languages: {}".format(
-                                 available_languages()),
-                        )
+    parser = argparse.ArgumentParser(
+        description="Query leo.org", usage="%(prog)s [OPTIONS] QUERYSTRING"
+    )
+    parser.add_argument(
+        "-D",
+        "--with-defs",
+        action="store_true",
+        default=False,
+        help="Include any definitions in the result " "(default: %(default)s)",
+    )
+    parser.add_argument(
+        "-E",
+        "--with-examples",
+        action="store_true",
+        default=False,
+        help="Include examples in the result " "(default: %(default)s)",
+    )
+    parser.add_argument(
+        "-P",
+        "--with-phrases",
+        action="store_true",
+        default=False,
+        help="Include phrases in the result " "(default: %(default)s)",
+    )
+    parser.add_argument(
+        "-v", "--verbose", action="count", help="Raise verbosity level",
+    )
+    parser.add_argument(
+        "-l",
+        "--language",
+        action="store",
+        default=default_lang(),
+        help="Translate from/to a specific language "
+        "by their full name or shortcut "
+        "(default: %(default)s). "
+        "Available languages: {}".format(available_languages()),
+    )
 
-    parser.add_argument('query',
-                        metavar="QUERYSTRING",
-                        help="Query string",
-                        )
+    parser.add_argument(
+        "query", metavar="QUERYSTRING", help="Query string",
+    )
     args = parser.parse_args(cliargs)
 
     # Setup logging and the log level according to the "-v" option
@@ -209,44 +211,60 @@ def parse(cliargs=None):
 
 
 class LeoWeb:
+    """
+    Class gets called with the selected language and term
+    """
+
     _url = "http://pda.leo.org/{lang}-deutsch/{term}"
-    #_url got commented out to make it a global variable
 
     def __init__(self, lang, term):
         self.lang = lang
         self.term = term
-        #self.args = args
         self.page = None
         self.tree = None
-        print("Class called")
 
     def query(self):
+        """Queries the webpage with the given language and term
+        Return: response of the webpage
+        Rtype: str
+        """
         url = LeoWeb._url.format(lang=self.lang, term=self.term)
         log.debug("Trying to load %r...", url)
         response = requests.get(url)
         if not response.ok:
             raise requests.exceptions.HTTPError(response)
-        print("query method called")
         self.page = response.text
         return response.text
 
     def parse_page(self):
+        """Parses the response of the query method with htmlparser
+        Return: htmlelement
+        Rtype: lxml.etree._ElementTree
+        """
         self.tree = htmlparser.fromstring(self.query())
         html = self.tree.getroottree()
         log.debug("Got HTML page")
-        print("parse_page method called")
         return html
 
     def extract_text(self, element):
-
-        txt = element.text_content().replace('\xa0', '')\
-                                    .replace('\xdf', 'ß')\
-                                    .replace('\n', '')
-        print("extract_text method called")
+        """Extracts the text of the etree element and replaces a
+        few chars
+        Return: extracted text of html
+        Rtype: str
+        """
+        txt = (
+            element.text_content()
+            .replace("\xa0", "")
+            .replace("\xdf", "ß")
+            .replace("\n", "")
+        )
         return txt
 
-
     def formating(self, row):
+        """Goes through the parsed htmlelement and selects the right
+        tr elements. It then prints out the results
+        Return/Rtype: None
+        """
         log.debug("Row: %s", row)
         widths = []
         translations = []
@@ -254,7 +272,9 @@ class LeoWeb:
         for tr in row:
             entry = tr.getchildren()
             entry = entry[4], entry[7]
-            c1, c2 = [self.extract_text(en) for en in entry if len(self.extract_text(en))]
+            c1, c2 = [
+                self.extract_text(en) for en in entry if len(self.extract_text(en))
+            ]
             t1 = c1.strip()
             t1 = " ".join(t1.split())
             t1 = t1.replace("AE", " [AE]")
@@ -267,20 +287,22 @@ class LeoWeb:
         max_width = max(widths)
 
         for t1, t2 in translations:
-            print("{left:<{width}} | {right}".format(
-                left = t1,
-                width = max_width,
-                right = t2)
-                )
-            print("formating method called")
+            print(
+                "{left:<{width}} | {right}".format(left=t1, width=max_width, right=t2)
+            )
 
-    def find_in_page(self,args, root):
+    def find_in_page(self, args, root):
+        """
+        Searches for the right columns and parses it to formating method
+        Return/Rtype: None
+        """
         log.debug("Analysing results...")
         line = "-" * 10
-        data = {"subst":    "Substantive",
-                "verb":     "Verbs",
-                "adjadv":   "Adjectives/Adverbs",
-                }
+        data = {
+            "subst": "Substantive",
+            "verb": "Verbs",
+            "adjadv": "Adjectives/Adverbs",
+        }
 
         if args.with_defs:
             data.update({"definition": "Definitions"})
@@ -295,36 +317,24 @@ class LeoWeb:
 
         found = set()
 
-        #if not self.tree:
-        #    html = self.parse_page()
-        #else:
-        #    html = self.tree.getroottree()
-            #self.html = self.
         html = self.parse_page().getroot()
-        #html = self.tree.getroottree()
-        div = html.get_element_by_id('centerColumn')
+        div = html.get_element_by_id("centerColumn")
         for section in div.find_class("section")[:5]:
-            name = section.attrib.get('data-dz-name')
+            name = section.attrib.get("data-dz-name")
             if name in data:
                 found.add(name)
                 print("\n{0} {1} {0}".format(line, data[name]))
-                trs = section.xpath("table/tbody/tr[td[@lang='{0}'] and "
-                                    "td[@lang='de']]".format(language_shortcut))
-                print("find_in_page method called")
+                trs = section.xpath(
+                    "table/tbody/tr[td[@lang='{0}'] and "
+                    "td[@lang='de']]".format(language_shortcut)
+                )
                 self.formating(trs)
-
-
-
-
-
-
-
 
 
 if __name__ == "__main__":
     args = parse()
     language = lang_name(args.language)
-    #url = url.format(language, args.query)
+    # url = url.format(language, args.query)
 
     returncode = 0
     try:
@@ -345,4 +355,3 @@ if __name__ == "__main__":
     sys.exit(returncode)
 
 # EOF
-

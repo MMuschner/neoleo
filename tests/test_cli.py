@@ -15,7 +15,7 @@ import leo
     (['--language', 'es', 'baum'], {'language': 'es'})
 ])
 def test_parse_cli(cli, expected):
-    result = leo.parse(cli)
+    result = neoleo.LeoWeb.parse_page(cli)
     # Create set difference and only compare this with the expected dictionary
     diff = set(result.__dict__) & set(expected)
     result = {i: getattr(result, i) for i in diff}
