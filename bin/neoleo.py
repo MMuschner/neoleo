@@ -229,7 +229,7 @@ class LeoWeb:
         )
         return txt
 
-    def iter(self):
+    def __iter__(self):
         """Queries the webpage with the given language and term
         Return: response of the webpage
         Rtype: str
@@ -289,12 +289,14 @@ class LeoWeb:
             t2 = " ".join(t2.split())
             widths.append(len(t1))
             translations.append((t1, t2))
-            yield translations
+            yield t1, t2
 
     def translation(self):
         max_width = 15
         result = []
-        for t1, t2 in iter(self):
+        for t1, t2 in self.__iter__():
+            #print (t1)
+            #print (t2)
             result.append("{left:<{width}} | {right}".format(left=t1,width=max_width, right=t2))
             return "\n".join(result)
 
