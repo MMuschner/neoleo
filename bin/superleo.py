@@ -215,20 +215,6 @@ class LeoWeb:
         self.page = None
         self.tree = None
 
-    def extract_text(self, element):
-        """Extracts the text of the etree element and replaces a
-        few chars
-        Return: extracted text of html
-        Rtype: str
-        """
-        txt = (
-            element.text_content()
-            .replace("\xa0", "")
-            .replace("\xdf", "Ã")
-            .replace("\n", "")
-        )
-        return txt
-
     def iter(self):
         """Queries the webpage with the given language and term
         Return: response of the webpage
@@ -251,15 +237,6 @@ class LeoWeb:
 
         #def find_in_page(self, args, root):
 
-        data = {
-            "subst": "Substantive",
-            "verb": "Verbs",
-            "adjadv": "Adjectives/Adverbs",
-        }
-        language_shortcut = lang_short(args.language)
-
-        found = set()
-        line = "-" * 10
         html = html.getroot()
         div = html.get_element_by_id("centerColumn")
         for section in div.find_class("section")[:5]:
@@ -271,6 +248,7 @@ class LeoWeb:
                     "table/tbody/tr[td[@lang='{0}'] and "
                     "td[@lang='de']]".format(language_shortcut)
                 )
+
         log.debug("Row: %s", trs)
         widths = []
         translations = []
@@ -289,14 +267,122 @@ class LeoWeb:
             t2 = " ".join(t2.split())
             widths.append(len(t1))
             translations.append((t1, t2))
-            yield translations
 
-    def translation(self):
-        max_width = 15
-        result = []
-        for t1, t2 in iter(self):
-            result.append("{left:<{width}} | {right}".format(left=t1,width=max_width, right=t2))
-            return "\n".join(result)
+        max_width = max(widths)
+
+        for t1, t2 in translations:
+            print(
+                "{left:<{width}} | {right}".format(left=t1, width=max_width, right=t2)
+            )
+
+
+
+    def query(self):
+        """Queries the webpage with the given language and term
+        Return: response of the webpage
+        Rtype: str
+        """
+        url = LeoWeb._url.format(lang=self.lang, term=self.term)
+        log.debug("Trying to load %r...", url)
+        response = requests.get(url)
+        if not response.ok:
+            raise requests.exceptions.HTTPError(response)
+        self.page = response.text
+        return response.text
+
+    def parse_page(self):
+        """Parses the response of the query method with htmlparser
+        Return: htmlelement
+        Rtype: lxml.etree._ElementTree
+        """
+        self.tree = htmlparser.fromstring(self.query())
+        html = self.tree.getroottree()
+        log.debug("Got HTML page")
+        return html
+
+    def extract_text(self, element):
+        """Extracts the text of the etree element and replaces a
+        few chars
+        Return: extracted text of html
+        Rtype: str
+        """
+        txt = (
+            element.text_content()
+            .replace("\xa0", "")
+            .replace("\xdf", "Ã")
+            .replace("\n", "")
+        )
+        return txt
+
+    def formating(self, row):
+        """Goes through the parsed htmlelement and selects the right
+        tr elements. It then prints out the results
+        Return/Rtype: None
+        """
+        log.debug("Row: %s", row)
+        widths = []
+        translations = []
+
+        for tr in row:
+            entry = tr.getchildren()
+            entry = entry[4], entry[7]
+            c1, c2 = [
+                self.extract_text(en) for en in entry if len(self.extract_text(en))
+            ]
+            t1 = c1.strip()
+            t1 = " ".join(t1.split())
+            t1 = t1.replace("AE", " [AE]")
+            t1 = t1.replace("BE", " [BE]")
+            t2 = c2.strip()
+            t2 = " ".join(t2.split())
+            widths.append(len(t1))
+            translations.append((t1, t2))
+
+        max_width = max(widths)
+
+        for t1, t2 in translations:
+            print(
+                "{left:<{width}} | {right}".format(left=t1, width=max_width, right=t2)
+            )
+
+    def find_in_page(self, args, root):
+        """
+        Searches for the right columns and parses it to formating method
+        Return/Rtype: None
+        """
+        log.debug("Analysing results...")
+        line = "-" * 10
+        data = {
+            "subst": "Substantive",
+            "verb": "Verbs",
+            "adjadv": "Adjectives/Adverbs",
+        }
+
+        if args.with_defs:
+            data.update({"definition": "Definitions"})
+
+        if args.with_examples:
+            data.update({"phrase": "Examples"})
+
+        if args.with_phrases:
+            data.update({"phrase": "Redewendung"})
+
+        language_shortcut = lang_short(args.language)
+
+        found = set()
+
+        html = self.parse_page().getroot()
+        div = html.get_element_by_id("centerColumn")
+        for section in div.find_class("section")[:5]:
+            name = section.attrib.get("data-dz-name")
+            if name in data:
+                found.add(name)
+                print("\n{0} {1} {0}".format(line, data[name]))
+                trs = section.xpath(
+                    "table/tbody/tr[td[@lang='{0}'] and "
+                    "td[@lang='de']]".format(language_shortcut)
+                )
+                self.formating(trs)
 
 
 if __name__ == "__main__":
@@ -307,8 +393,7 @@ if __name__ == "__main__":
     returncode = 0
     try:
         doc = LeoWeb(language, args.query)
-        doc.translation()
-
+        doc.find_in_page(args, doc)
 
     except requests.exceptions.Timeout:
         log.error("Timeout")
