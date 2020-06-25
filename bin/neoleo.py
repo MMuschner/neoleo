@@ -262,6 +262,8 @@ class LeoWeb:
         line = "-" * 10
         html = html.getroot()
         div = html.get_element_by_id("centerColumn")
+        widths = []
+
         for section in div.find_class("section")[:5]:
             name = section.attrib.get("data-dz-name")
             if name in data:
@@ -271,25 +273,21 @@ class LeoWeb:
                     "table/tbody/tr[td[@lang='{0}'] and "
                     "td[@lang='de']]".format(language_shortcut)
                 )
-        log.debug("Row: %s", trs)
-        widths = []
-        translations = []
 
-        for tr in trs:
-            entry = tr.getchildren()
-            entry = entry[4], entry[7]
-            c1, c2 = [
-                self.extract_text(en) for en in entry if len(self.extract_text(en))
-            ]
-            t1 = c1.strip()
-            t1 = " ".join(t1.split())
-            t1 = t1.replace("AE", " [AE]")
-            t1 = t1.replace("BE", " [BE]")
-            t2 = c2.strip()
-            t2 = " ".join(t2.split())
-            widths.append(len(t1))
-            translations.append((t1, t2))
-            yield t1, t2
+                for tr in trs:
+                    entry = tr.getchildren()
+                    entry = entry[4], entry[7]
+                    c1, c2 = [
+                        self.extract_text(en) for en in entry if len(self.extract_text(en))
+                    ]
+                    t1 = c1.strip()
+                    t1 = " ".join(t1.split())
+                    t1 = t1.replace("AE", " [AE]")
+                    t1 = t1.replace("BE", " [BE]")
+                    t2 = c2.strip()
+                    t2 = " ".join(t2.split())
+                    widths.append(len(t1))
+                    yield t1, t2
 
     def translation(self):
         max_width = 15
@@ -298,7 +296,7 @@ class LeoWeb:
             #print (t1)
             #print (t2)
             result.append("{left:<{width}} | {right}".format(left=t1,width=max_width, right=t2))
-            return "\n".join(result)
+        return "\n".join(result)
 
 
 if __name__ == "__main__":
@@ -309,7 +307,7 @@ if __name__ == "__main__":
     returncode = 0
     try:
         doc = LeoWeb(language, args.query)
-        doc.translation()
+        print(doc.translation())
 
 
     except requests.exceptions.Timeout:
