@@ -312,7 +312,7 @@ if __name__ == "__main__":
     returncode = 0
     try:
         doc = LeoWeb(language, args.query)
-        print(doc.translation())
+        doc.translation()
 
     except requests.exceptions.Timeout:
         log.error("Timeout")
