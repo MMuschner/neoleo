@@ -215,7 +215,7 @@ class LeoWeb:
         self.page = None
         self.tree = None
 
-    def extract_text(self, element):
+    def _extract_text(self, element):
         """Extracts the text of the etree element and replaces a
         few chars
         Return: extracted text of html
@@ -278,9 +278,9 @@ class LeoWeb:
                     entry = tr.getchildren()
                     entry = entry[4], entry[7]
                     c1, c2 = [
-                        self.extract_text(en)
+                        self._extract_text(en)
                         for en in entry
-                        if len(self.extract_text(en))
+                        if len(self._extract_text(en))
                     ]
                     t1 = c1.strip()
                     t1 = " ".join(t1.split())
