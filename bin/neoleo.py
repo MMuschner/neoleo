@@ -224,7 +224,7 @@ class LeoWeb:
         txt = (
             element.text_content()
             .replace("\xa0", "")
-            .replace("\xdf", "Ã")
+            .replace("\xdf", "ß")
             .replace("\n", "")
         )
         return txt
@@ -272,6 +272,7 @@ class LeoWeb:
                     "table/tbody/tr[td[@lang='{0}'] and "
                     "td[@lang='de']]".format(language_shortcut)
                 )
+                widths = []
 
                 for tr in trs:
                     entry = tr.getchildren()
