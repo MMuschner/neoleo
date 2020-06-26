@@ -262,7 +262,6 @@ class LeoWeb:
         line = "-" * 10
         html = html.getroot()
         div = html.get_element_by_id("centerColumn")
-        widths = []
 
         for section in div.find_class("section")[:5]:
             name = section.attrib.get("data-dz-name")
