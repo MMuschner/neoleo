@@ -23,7 +23,7 @@ __version__ = "1.0"
 
 LANGUAGES = OrderedDict(
     en="englisch",
-    fr="franzÃ¶sisch",
+    fr="französisch",
     es="spanisch",
     it="italienisch",
     # FIPS and NATO country code for China. ISO code for Switzerland:
