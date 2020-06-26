@@ -231,8 +231,7 @@ class LeoWeb:
 
     def __iter__(self):
         """Queries the webpage with the given language and term
-        Return: response of the webpage
-        Rtype: str
+        self.page is the response of leo.org
         """
         url = LeoWeb._url.format(lang=self.lang, term=self.term)
         log.debug("Trying to load %r...", url)
@@ -242,14 +241,15 @@ class LeoWeb:
         self.page = response.text
 
         """Parses the response of the query method with htmlparser
-        Return: htmlelement
-        Rtype: lxml.etree._ElementTree
+        html is the html page
         """
         self.tree = htmlparser.fromstring(response.text)
         html = self.tree.getroottree()
         log.debug("Got HTML page")
 
-        #def find_in_page(self, args, root):
+        """
+        Selects the correct elements in the html page
+        """
 
         data = {
             "subst": "Substantive",
@@ -278,7 +278,9 @@ class LeoWeb:
                     entry = tr.getchildren()
                     entry = entry[4], entry[7]
                     c1, c2 = [
-                        self.extract_text(en) for en in entry if len(self.extract_text(en))
+                        self.extract_text(en)
+                        for en in entry
+                        if len(self.extract_text(en))
                     ]
                     t1 = c1.strip()
                     t1 = " ".join(t1.split())
@@ -290,25 +292,27 @@ class LeoWeb:
                     yield t1, t2
 
     def translation(self):
-        max_width = 15
+        """Prints the yielded elements from the iter() function in a readable
+        output.
+        Return/Rtype: None
+        """
         result = []
+        max_width = 30
         for t1, t2 in self.__iter__():
-            #print (t1)
-            #print (t2)
-            result.append("{left:<{width}} | {right}".format(left=t1,width=max_width, right=t2))
-        return "\n".join(result)
+            print(t1, t2)
+            print(
+                "{left:<{width}} | {right}".format(left=t1, width=max_width, right=t2)
+            )
 
 
 if __name__ == "__main__":
     args = parse()
     language = lang_name(args.language)
-    # url = url.format(language, args.query)
 
     returncode = 0
     try:
         doc = LeoWeb(language, args.query)
         print(doc.translation())
-
 
     except requests.exceptions.Timeout:
         log.error("Timeout")
